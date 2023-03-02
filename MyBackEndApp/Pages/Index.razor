@@ -1,0 +1,52 @@
+﻿@page "/"
+@using Microsoft.AspNetCore.SignalR.Client
+@inject NavigationManager Navigation
+@implements IAsyncDisposable
+
+<PageTitle>Send Data</PageTitle>
+
+<div class="form-group">
+    <label>
+        Device ID (STRING):
+        <input @bind="deviceIdInput" size="50" />
+    </label>
+    <button @onclick="RegisterDevice" disabled="@(!IsConnected)">Register new device</button>
+</div>
+<hr>
+
+<div class="form-group">
+    <label>
+        X Coordinate (FLOAT):
+        <input @bind="xCoordinateInput" size="20" />
+    </label>
+    <label>
+        Y Coordinate (FLOAT):
+        <input @bind="yCoordinateInput" size="20" />
+    </label>
+    <button @onclick="SendGeoEvent" disabled="@(!IsConnected)">Register new geoposition event</button>
+</div>
+<hr>
+
+<div class="form-group">
+    <label>
+        Actual Temperature (INT):
+        <input @bind="temperatureInput" size="20" />
+    </label>
+    <button @onclick="SendTemperatureEvent" disabled="@(!IsConnected)">Register new temperature event</button>
+</div>
+<hr>
+
+<div class="form-group">
+    <button @onclick="SendManyEvents" disabled="@(!IsConnected)">Register many events</button>
+</div>
+<hr>
+
+<label>Result:</label>
+<br />
+<ul id="messagesList">
+    @foreach (var message in messages)
+    {
+        <li>@message</li>
+    }
+</ul>
+

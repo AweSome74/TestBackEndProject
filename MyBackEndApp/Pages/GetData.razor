@@ -1,0 +1,71 @@
+﻿@page "/GetData"
+@using Microsoft.AspNetCore.SignalR.Client
+@using MyBackEndApp.Model;
+@using Newtonsoft.Json;
+@inject NavigationManager Navigation
+@implements IAsyncDisposable
+
+<PageTitle>Send Data</PageTitle>
+
+<div class="form-group">
+    <button @onclick="GetDeviceEventInfo" disabled="@(!IsConnected)">Get events report</button>
+</div>
+<hr>
+
+<label>Result:</label>
+<br />
+<ul id="messagesList">
+    @foreach (var message in messages)
+    {
+        <li>@message</li>
+    }
+</ul>
+
+@code {
+    private HubConnection? hubConnection;
+    private readonly List<string> messages = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(Navigation.ToAbsoluteUri("/events"))
+            .Build();
+
+        hubConnection.On<string>("ReportMessage", (json) =>
+        {
+            messages.Clear();
+            var reports = JsonConvert.DeserializeObject<List<EventReport>>(json);
+            foreach (var report in reports)
+            {
+                var deviceId = report.DeviceId;
+                var totalEvents = report.TotalEventsCount.ToString();
+                var lastEventDate = report.LastEventDate?.ToString("dd MMMM yyyy  HH:mm") ?? "[NO DATA]";
+
+                var encodedMsg = $"DEVICE ID: {deviceId}; TOTAL EVENTS: {totalEvents}; LAST EVENT DATE: {lastEventDate}";
+                messages.Add(encodedMsg);
+            }
+            InvokeAsync(StateHasChanged);
+        });
+
+        await hubConnection.StartAsync();
+    }
+
+    private async Task GetDeviceEventInfo()
+    {
+        if (hubConnection is not null)
+        {
+            await hubConnection.SendAsync("GetDeviceEventInfo");
+        }
+    }
+
+    public bool IsConnected =>
+        hubConnection?.State == HubConnectionState.Connected;
+
+    public async ValueTask DisposeAsync()
+    {
+        if (hubConnection is not null)
+        {
+            await hubConnection.DisposeAsync();
+        }
+    }
+}
